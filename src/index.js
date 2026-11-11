@@ -183,6 +183,11 @@ async function fetchHistoryData(env, request, id, hours, columns, sys = null) {
 
 export default {
   async fetch(request, env, ctx) {
+    // Owner-only monitor: validate Cloudflare's source header before serving
+    // pages, assets, API requests, WebSockets or Agent uploads on either host.
+    if (request.headers.get('CF-Connecting-IP') !== '68.68.248.45') {
+      return new Response(null, { status: 404, headers: { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' } });
+    }
     setDebug(env.DEBUG);
 
     const url = new URL(request.url);
