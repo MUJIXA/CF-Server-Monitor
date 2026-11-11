@@ -205,6 +205,14 @@ export default {
       return createOptionsResponse(request, corsAllowedOrigins);
     }
 
+    // With worker-first IP checks enabled, explicitly preserve the built-in
+    // admin bundle and public support files instead of serving theme HTML.
+    const builtinAsset = ['/static/', '/flags/', '/os-icons/', '/files/', '/mikus/'].some(prefix => path.startsWith(prefix)) ||
+      ['/dashboard.html', '/favicon.ico', '/favicon.png', '/manifest.json', '/cf-server-monitor.ps1', '/install.sh', '/install-alpine.sh', '/install-mac.sh', '/install-openwrt.sh', '/install-synology.sh', '/uninstall.sh', '/uninstall.ps1'].includes(path);
+    if ((method === 'GET' || method === 'HEAD') && builtinAsset) {
+      return env.ASSETS.fetch(request);
+    }
+
     if (method === 'GET' && path === '/admin/') {
       const target = new URL(request.url);
       const search = target.search;
