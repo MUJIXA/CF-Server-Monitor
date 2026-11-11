@@ -487,6 +487,32 @@ async function handleLoginAction({ request, env, sys, data }) {
     return createBadRequestResponse('missingCredentials');
   }
 
+  // Protect login attempts only; Agent reports and authenticated admin actions
+  // do not consume this counter. Cloudflare enforces it per edge location.
+  const clientIp = request.headers.get('CF-Connecting-IP')?.trim();
+  const rejectLogin = (status, error) => new Response(JSON.stringify({ code: status, error }), {
+    status,
+    headers: {
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-store',
+      ...(status >= 429 ? { 'Retry-After': '60' } : {})
+    }
+  });
+  if (!clientIp || clientIp.length > 64) {
+    return rejectLogin(403, 'Cloudflare client IP is required.');
+  }
+  let loginLimit;
+  try {
+    loginLimit = await env.LOGIN_RATE_LIMITER.limit({ key: `cfsm-admin-login:${clientIp}` });
+  } catch (_) {
+    // Do not silently disable protection if its binding is missing or fails.
+    console.warn('Admin login rate limiter unavailable');
+    return rejectLogin(503, 'Login protection is temporarily unavailable. Please retry in 60 seconds.');
+  }
+  if (!loginLimit?.success) {
+    return rejectLogin(429, 'Too many login attempts. Please retry in 60 seconds.');
+  }
+
   const turnstileEnabled = sys && (sys.turnstile_enabled === 'true' || sys.turnstile_enabled === true);
   const turnstileLoginEnabled = sys && (sys.turnstile_login_enabled === 'true' || sys.turnstile_login_enabled === true);
   const turnstileSecretKey = sys && sys.turnstile_secret_key || '';
