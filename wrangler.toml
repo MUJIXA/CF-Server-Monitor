@@ -1,32 +1,26 @@
-# Dedicated private monitoring deployment; secrets are managed in Cloudflare.
+# Private monitoring deployment; runtime secrets live in Cloudflare.
 name = "vector-private-monitor"
 main = "src/index.js"
 compatibility_date = "2024-12-01"
 compatibility_flags = ["nodejs_compat"]
 keep_vars = true
-
 [triggers]
 crons = ["*/1 * * * *", "0 * * * *"]
-
 [assets]
 directory = "./dist"
 binding = "ASSETS"
-
 [[d1_databases]]
 binding = "DB"
 database_name = "vector-private-monitor-db"
-
+database_id = "b996a6d0-030b-4d05-8ce0-05792abf4270"
 [[durable_objects.bindings]]
 name = "METRICS_BROADCASTER"
 class_name = "MetricsBroadcaster"
-
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["MetricsBroadcaster"]
-
 [vars]
 API_USER_NAME = "mujixa"
-
 [dev]
 port = 8787
 local_protocol = "https"
