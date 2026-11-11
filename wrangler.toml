@@ -21,6 +21,10 @@ tag = "v1"
 new_sqlite_classes = ["MetricsBroadcaster"]
 [vars]
 API_USER_NAME = "mujixa"
+[[ratelimits]]
+name = "LOGIN_RATE_LIMITER"
+namespace_id = "686824845"
+simple = { limit = 5, period = 60 }
 [dev]
 port = 8787
 local_protocol = "https"
